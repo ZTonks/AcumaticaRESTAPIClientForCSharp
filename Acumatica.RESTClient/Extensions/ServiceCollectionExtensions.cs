@@ -7,7 +7,16 @@ namespace Acumatica.RESTClient
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection ConfigureAcumaticaApiClientDependencies(
+        public static IServiceCollection ConfigureAcumaticaHttpClientHandler(
+            this IServiceCollection serviceCollection,
+            string acumaticaHttpClientName) =>
+                serviceCollection.AddSingleton<RESTClient.Client.IHttpClientHandler>(
+                    sp => new Client.HttpClientHandler(
+                        sp.GetRequiredService<CookieContainer>(),
+                        sp.GetRequiredService<IHttpClientFactory>(),
+                        acumaticaHttpClientName));
+
+        public static IServiceCollection ConfigureDefaultAcumaticaApiClientDependencies(
             this IServiceCollection serviceCollection,
             int timeout = 100000,
             bool ignoreSslErrors = false)
@@ -16,6 +25,7 @@ namespace Acumatica.RESTClient
             var cookies = new CookieContainer();
 
             serviceCollection
+                .AddSingleton(_ => cookies)
                 .AddHttpClient(
                     httpClientName,
                     c =>
@@ -37,11 +47,8 @@ namespace Acumatica.RESTClient
                             CookieContainer = cookies,
                         });
 
-            return serviceCollection.AddSingleton(
-                sp => new Client.HttpClientHandler(
-                    cookies,
-                    sp.GetRequiredService<IHttpClientFactory>(),
-                    httpClientName));
+            return serviceCollection
+                .ConfigureAcumaticaHttpClientHandler(httpClientName);
         }
     }
 }
