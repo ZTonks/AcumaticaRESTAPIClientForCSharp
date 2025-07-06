@@ -1,11 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-
-using Microsoft.Extensions.DependencyInjection;
 
 using Acumatica.RESTClient.Api;
 using Acumatica.RESTClient.AuthApi.Model;
@@ -118,11 +115,11 @@ namespace Acumatica.RESTClient.Client
         public virtual async Task<HttpResponseMessage> CallApiAsync(
             string resourcePath,
             HttpMethod method,
-            List<KeyValuePair<String, String>>? queryParams,
+            List<KeyValuePair<string, string>>? queryParams,
             object? postBody,
             HeaderContentType acceptType,
             HeaderContentType contentType,
-            Dictionary<String, String>? customHeaders = null,
+            Dictionary<string, string>? customHeaders = null,
             bool useToken = true)
         {
             var request = PrepareRequest(
@@ -159,11 +156,11 @@ namespace Acumatica.RESTClient.Client
 
         // Creates and sets up a RestRequest prior to a call.
         private HttpRequestMessage PrepareRequest(
-            String resourcePath,
+            string resourcePath,
             HttpMethod method,
-            List<KeyValuePair<String, String>>? queryParams,
-            Object? postBody,
-            Dictionary<String, String>? headerParams,
+            List<KeyValuePair<string, string>>? queryParams,
+            object? postBody,
+            Dictionary<string, string>? headerParams,
             string acceptType,
             string contentType,
             bool isAuth = false)
@@ -187,7 +184,8 @@ namespace Acumatica.RESTClient.Client
                     request.Headers.Add(param.Key, param.Value);
                 }
             }
-            if (!String.IsNullOrWhiteSpace(acceptType))
+
+            if (!string.IsNullOrWhiteSpace(acceptType))
             {
                 request.Headers.Add("Accept", acceptType);
             }
@@ -201,7 +199,10 @@ namespace Acumatica.RESTClient.Client
             {
                 if (postBody is string str)
                 {
-                    request.Content = new StringContent(str, Encoding.UTF8, contentType);
+                    request.Content = new StringContent(
+                        str,
+                        Encoding.UTF8,
+                        contentType);
                 }
                 else if (postBody is byte[] bytes)
                 {
@@ -209,7 +210,10 @@ namespace Acumatica.RESTClient.Client
                 }
                 else
                 {
-                    request.Content = new StringContent(Serialize(postBody), Encoding.UTF8, contentType);
+                    request.Content = new StringContent(
+                        Serialize(postBody),
+                        Encoding.UTF8,
+                        contentType);
                 }
             }
 
@@ -223,6 +227,5 @@ namespace Acumatica.RESTClient.Client
                 SessionCookieName);
         }
         #endregion
-    }    
+    }
 }
-
