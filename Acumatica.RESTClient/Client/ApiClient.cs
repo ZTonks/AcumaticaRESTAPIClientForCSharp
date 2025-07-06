@@ -47,24 +47,16 @@ namespace Acumatica.RESTClient.Client
         /// </param>
         public ApiClient(
             string basePath,
-            int timeout = 100000,
-            bool ignoreSslErrors = false,
+            IHttpClientHandler httpClient,
             Action<HttpRequestMessage>? requestInterceptor = null,
             Action<HttpResponseMessage>? responseInterceptor = null)
         {
-            BasePath = basePath.EndsWith("/") ? basePath : basePath + "/";
+            BasePath = basePath.EndsWith("/")
+                ? basePath
+                : basePath + "/";
 
             RequestInterceptor = requestInterceptor;
             ResponseInterceptor = responseInterceptor;
-
-            HttpClient = new HttpClientHandler(timeout, ignoreSslErrors);
-        }
-
-        internal ApiClient(
-            string basePath,
-            IHttpClientHandler httpClient)
-        {
-            BasePath = basePath.EndsWith("/") ? basePath : basePath + "/";
 
             HttpClient = httpClient;
         }
