@@ -30,7 +30,7 @@ namespace Acumatica.RESTClient
                     httpClientName,
                     c =>
                     {
-                        c.Timeout = new TimeSpan(0, 0, 0, 0, timeout);
+                        c.Timeout = TimeSpan.FromMilliseconds(timeout);
                     })
                 .ConfigurePrimaryHttpMessageHandler(
                     () => ignoreSslErrors
