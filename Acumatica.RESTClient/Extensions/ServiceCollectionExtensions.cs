@@ -16,7 +16,7 @@ namespace Acumatica.RESTClient
                         sp.GetRequiredService<IHttpClientFactory>(),
                         acumaticaHttpClientName));
 
-        public static IServiceCollection ConfigureDefaultAcumaticaApiClientDependencies(
+        public static IServiceCollection ConfigureAcumaticaApiClientWithDefaultHttpClient(
             this IServiceCollection serviceCollection,
             int timeout = 100000,
             bool ignoreSslErrors = false)
