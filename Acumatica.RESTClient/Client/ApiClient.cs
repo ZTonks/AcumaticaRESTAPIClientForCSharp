@@ -15,7 +15,6 @@ using System.Linq;
 using System.Web;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("RESTClientTests")]
-
 namespace Acumatica.RESTClient.Client
 {
     /// <summary>
@@ -24,6 +23,7 @@ namespace Acumatica.RESTClient.Client
     public class ApiClient : IDisposable
     {
         private const string SessionCookieName = "ASP.NET_SessionId";
+
         #region State & ctor
         /// <summary>
         /// Initializes a new instance of the <see cref="ApiClient" /> class.
@@ -45,11 +45,12 @@ namespace Acumatica.RESTClient.Client
         /// <param name="ignoreSslErrors">
         /// Sets whether SSL/TLS related errors should be ignored.
         /// </param>
-        public ApiClient(string basePath,
+        public ApiClient(
+            string basePath,
             int timeout = 100000,
             bool ignoreSslErrors = false,
-             Action<HttpRequestMessage>? requestInterceptor = null,
-             Action<HttpResponseMessage>? responseInterceptor = null)
+            Action<HttpRequestMessage>? requestInterceptor = null,
+            Action<HttpResponseMessage>? responseInterceptor = null)
         {
             BasePath = basePath.EndsWith("/") ? basePath : basePath + "/";
 
@@ -59,13 +60,14 @@ namespace Acumatica.RESTClient.Client
             HttpClient = new HttpClientHandler(timeout, ignoreSslErrors);
         }
 
-        internal ApiClient(string basePath, IHttpClientHandler httpClient)
+        internal ApiClient(
+            string basePath,
+            IHttpClientHandler httpClient)
         {
             BasePath = basePath.EndsWith("/") ? basePath : basePath + "/";
 
             HttpClient = httpClient;
         }
-
 
         /// <summary>
         /// Method that is executed before request. May be used for loggin the request body.
@@ -83,13 +85,11 @@ namespace Acumatica.RESTClient.Client
         /// </summary>
         /// <value>An instance of the HttpClient</value>
         internal IHttpClientHandler HttpClient { get; set; }
+
         /// <summary>
         /// Gets or sets the base path for API access.
         /// </summary>
-        public virtual string BasePath
-        {
-            get; set;
-        }
+        public virtual string BasePath { get; set; }
 
         /// <summary>
         /// Gets or sets the username (HTTP basic authentication).
@@ -123,14 +123,15 @@ namespace Acumatica.RESTClient.Client
         /// <param name="pathParams">Path parameters.</param>
         /// <param name="contentType">Content type.</param>
         /// <returns>The Task instance.</returns>
-        public async Task<HttpResponseMessage> CallApiAsync(
-            String resourcePath,
+        public virtual async Task<HttpResponseMessage> CallApiAsync(
+            string resourcePath,
             HttpMethod method,
             List<KeyValuePair<String, String>>? queryParams,
-            Object? postBody,
+            object? postBody,
             HeaderContentType acceptType,
             HeaderContentType contentType,
-            Dictionary<String, String>? customHeaders = null)
+            Dictionary<String, String>? customHeaders = null,
+            bool useToken = true)
         {
             var request = PrepareRequest(
                 resourcePath,
@@ -141,26 +142,18 @@ namespace Acumatica.RESTClient.Client
                 acceptType: ComposeAcceptHeaders(acceptType),
                 contentType: ComposeContentHeaders(contentType));
 
-            if (RequestInterceptor != null)
-            {
-                RequestInterceptor(request);
-            }
+            RequestInterceptor?.Invoke(request);
+
             HttpResponseMessage response = await HttpClient.SendRequest(request);
 
-            if (ResponseInterceptor != null)
-            {
-                ResponseInterceptor(response);
-            }
+            ResponseInterceptor?.Invoke(response);
 
             return response;
         }
 
+        public bool HasToken() =>
+            Token != null;
 
-      
-        public bool HasToken()
-        {
-            return Token != null;
-        }
         public void Dispose()
         {
             if (HasToken() || HasSessionInfo())
@@ -180,9 +173,9 @@ namespace Acumatica.RESTClient.Client
             Object? postBody,
             Dictionary<String, String>? headerParams,
             string acceptType,
-            string contentType)
+            string contentType,
+            bool isAuth = false)
         {
-
             var url = new UriBuilder(BasePath + resourcePath);
 
             if (queryParams != null)
@@ -190,7 +183,10 @@ namespace Acumatica.RESTClient.Client
                 url.Query += string.Join("&", queryParams.Select(queryParamter => $"{queryParamter.Key}={HttpUtility.UrlEncode(queryParamter.Value, Encoding.UTF8)}"));
             }
 
+            Console.WriteLine($"url: {url.ToString()}");
+
             var request = new HttpRequestMessage(method, url.ToString());
+
             if (headerParams != null)
             {
                 // add header parameter, if any
@@ -204,7 +200,6 @@ namespace Acumatica.RESTClient.Client
                 request.Headers.Add("Accept", acceptType);
             }
 
-
             if (HasToken())
             {
                 request.Headers.Add("Authorization", $"{Token!.Token_type} {Token.Access_token}");
@@ -212,27 +207,30 @@ namespace Acumatica.RESTClient.Client
 
             if (postBody != null)
             {
-                if (postBody is string)
+                if (postBody is string str)
                 {
-                    request.Content = new StringContent(postBody as string, Encoding.UTF8, contentType);
+                    request.Content = new StringContent(str, Encoding.UTF8, contentType);
                 }
-
-                else if (postBody is byte[])
+                else if (postBody is byte[] bytes)
                 {
-                    request.Content = new ByteArrayContent(postBody as byte[]);
+                    request.Content = new ByteArrayContent(bytes);
                 }
                 else
                 {
                     request.Content = new StringContent(Serialize(postBody), Encoding.UTF8, contentType);
                 }
             }
+
             return request;
         }
 
         internal bool HasSessionInfo()
         {
-            return HttpClient.HasSessionCookie(new Uri(BasePath), SessionCookieName);
+            return HttpClient.HasSessionCookie(
+                new Uri(BasePath),
+                SessionCookieName);
         }
         #endregion
-    }
+    }    
 }
+

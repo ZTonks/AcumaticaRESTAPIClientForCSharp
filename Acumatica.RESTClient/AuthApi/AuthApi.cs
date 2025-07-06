@@ -46,7 +46,8 @@ namespace Acumatica.RESTClient.AuthApi
                     {"refresh_token", client.Token!.Refresh_token! },
                }),
                HeaderContentType.None,
-               HeaderContentType.WwwForm);
+               HeaderContentType.WwwForm,
+               useToken: false);
 
             response.EnsureSuccessStatusCode();
 
@@ -88,7 +89,8 @@ namespace Acumatica.RESTClient.AuthApi
                     {"scope", PrepareScopeParameter(scope) }
                }),
                HeaderContentType.None,
-               HeaderContentType.WwwForm);
+               HeaderContentType.WwwForm,
+               useToken: false);
 
             await VerifyResponseAsync(client, response, nameof(ReceiveAccessTokenAsync));
 
