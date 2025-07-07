@@ -24,6 +24,26 @@ namespace Acumatica.RESTClient.Client
             _httpClientName = httpClientName;
         }
 
+        public HttpClientHandler(
+            CookieContainer cookieContainer,
+            IHttpClientFactory httpClientFactory,
+            string httpClientName)
+        {
+            _httpClientName = "HttpClient";
+
+            var serviceProvider = new ServiceCollection()
+                .ConfigureDefaultHttpClientHandler(
+                    timeout,
+                    ignoreSslErrors,
+                    _httpClientName)
+                .BuildServiceProvider();
+
+            _httpClientFactory = serviceProvider
+                .GetRequiredService<IHttpClientFactory>();
+            _cookieContainer = serviceProvider
+                .GetRequiredService<CookieContainer>();
+        }
+
         public Task<HttpResponseMessage> SendRequest(
             HttpRequestMessage request) =>
                 GetHttpClient().SendAsync(request);
