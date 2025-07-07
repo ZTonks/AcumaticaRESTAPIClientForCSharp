@@ -4,6 +4,8 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.DependencyInjection;
+
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("RESTClientTests")]
 namespace Acumatica.RESTClient.Client
 {
@@ -25,9 +27,8 @@ namespace Acumatica.RESTClient.Client
         }
 
         public HttpClientHandler(
-            CookieContainer cookieContainer,
-            IHttpClientFactory httpClientFactory,
-            string httpClientName)
+            int timeout,
+            bool ignoreSslErrors)
         {
             _httpClientName = "HttpClient";
 
