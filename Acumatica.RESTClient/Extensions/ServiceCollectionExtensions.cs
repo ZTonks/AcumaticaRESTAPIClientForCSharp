@@ -56,6 +56,7 @@ namespace Acumatica.RESTClient
             string basePath,
             int timeout = 100000,
             bool ignoreSslErrors = false,
+            string? customEndpoint = null,
             Action<HttpRequestMessage>? requestInterceptor = null,
             Action<HttpResponseMessage>? responseInterceptor = null) =>
                 serviceCollection
@@ -64,6 +65,7 @@ namespace Acumatica.RESTClient
                         new Client.ApiClient(
                             basePath,
                             sp.GetRequiredService<Client.IHttpClientHandler>(),
+                            customEndpoint,
                             requestInterceptor,
                             responseInterceptor));
     }

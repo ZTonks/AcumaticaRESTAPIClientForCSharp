@@ -41,6 +41,7 @@ namespace Acumatica.RESTClient.Auxiliary
 
             return queryParameters;
         }
+
         /// <summary>
         /// Deserialize the JSON string into a proper object.
         /// </summary>
@@ -50,16 +51,19 @@ namespace Acumatica.RESTClient.Auxiliary
         public static async Task<T?> DeserializeAsync<T>(HttpResponseMessage response)
             where T : class
         {
-            JsonSerializerSettings serializerSettings = new JsonSerializerSettings
+            JsonSerializerSettings serializerSettings = new()
             {
                 ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor
             };
 
+            Console.WriteLine($"debug resp: {await response.Content.ReadAsStringAsync()}");
+
             return (T?)JsonConvert.DeserializeObject(await response.Content.ReadAsStringAsync(), typeof(T), serializerSettings);
         }
+
         public static string ComposeContentHeaders(HeaderContentType contentTypes)
         {
-            return SelectHeaderContentType(ApiClientHelpers.ComposeHeadersArray(contentTypes));
+            return SelectHeaderContentType(ComposeHeadersArray(contentTypes));
         }
         /// <summary>
         /// Serialize an input (model) into JSON string

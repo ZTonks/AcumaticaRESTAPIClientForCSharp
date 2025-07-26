@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
 using Acumatica.RESTClient.Api;
 using Acumatica.RESTClient.Client;
 using Acumatica.RESTClient.ContractBasedApi.Model;
-
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using static Acumatica.RESTClient.Auxiliary.ApiClientHelpers;
 using static Acumatica.RESTClient.ContractBasedApi.EntityStructureHelper;
 
@@ -460,27 +464,85 @@ namespace Acumatica.RESTClient.ContractBasedApi
         public static async Task<List<EntityType>> GetListAsync<EntityType>(
             this ApiClient client,
             string? endpointPath = null,
-            string? select = null, string? filter = null, string? expand = null, string? custom = null,
-            int? skip = null, int? top = null, Dictionary<string, string>? customHeaders = null)
-            where EntityType : ITopLevelEntity, new()
+            string? select = null,
+            string? filter = null,
+            string? expand = null,
+            string? custom = null,
+            int? skip = null,
+            int? top = null,
+            Dictionary<string, string>? customHeaders = null)
+                where EntityType : ITopLevelEntity, new()
         {
-
-            if (endpointPath == null)
-                endpointPath = GetEndpointPath<EntityType>();
+            endpointPath ??= $"{GetEndpointPath<EntityType>()}/{GetEntityName(typeof(EntityType))}";
 
             HttpResponseMessage response = await client.CallApiAsync(
-              $"{endpointPath}/{GetEntityName(typeof(EntityType))}",
+              endpointPath,
               HttpMethod.Get,
               ComposeQueryParams(select, filter, expand, custom, skip, top),
               null,
               HeaderContentType.Json,
-              HeaderContentType.None,
+              HeaderContentType.Json,
               customHeaders);
 
             await VerifyResponseAsync(response, nameof(GetListAsync));
 
             return await DeserializeAsync<List<EntityType>>(response);
         }
+
+        public static async Task<List<EntityType>> GetListCustomEndpointAsync<EntityType>(
+            this ApiClient client,
+            string? endpointPath = null,
+            string? select = null,
+            string? filter = null,
+            object? objFilter = null,
+            string? expand = null,
+            string? custom = null,
+            int? skip = null,
+            int? top = null,
+            Dictionary<string, string>? customHeaders = null)
+                where EntityType : ITopLevelEntity, new()
+        {
+            var entityName = GetEntityName(typeof(EntityType));
+
+            if (string.IsNullOrWhiteSpace(endpointPath))
+            {
+                if (!string.IsNullOrWhiteSpace(client.CustomEndpoint))
+                {
+                    endpointPath = $"{client.CustomEndpoint}/{entityName}";
+                }
+                else
+                {
+                    endpointPath =
+                        $"{GetEndpointPath<EntityType>()}/{entityName}";
+                }
+            }
+
+            expand ??= $"{entityName}Details";
+
+            var response = await client.CallApiAsync(
+              endpointPath!,
+              HttpMethod.Put,
+              ComposeQueryParams(select, filter, expand, custom, skip, top),
+              objFilter ?? new(),
+              HeaderContentType.Json,
+              HeaderContentType.Json,
+              customHeaders);
+
+            await VerifyResponseAsync(response, nameof(GetListAsync));
+
+            var resp = await response.Content.ReadAsStreamAsync();
+
+            using var reader = new StreamReader(resp);
+            using var jsonReader = new JsonTextReader(reader)
+            {
+                CloseInput = true,
+            };
+
+            var jToken = JToken.Load(jsonReader);
+
+            return jToken[expand]!.ToObject<List<EntityType>>()!;
+        }
+
         /// <summary>
         /// Retrieves records that satisfy the specified conditions from the system. 
         /// </summary>
@@ -703,29 +765,28 @@ namespace Acumatica.RESTClient.ContractBasedApi
         #endregion
 
         #region Error Handling
-        private static async Task VerifyResponseAsync(HttpResponseMessage response, string methodName)
+        private static async Task VerifyResponseAsync(
+            HttpResponseMessage response,
+            string methodName)
         {
-            if (!response.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode)
             {
-                string? responseMessage = null;
-                if (string.IsNullOrEmpty(responseMessage))
-                {
-                    responseMessage = await GetErrorMessageFromErrorAsync(response);
-                }
-                if (string.IsNullOrEmpty(responseMessage))
-                {
-                    responseMessage = await GetErrorMessageFromErrorAsync(response);
-                }
-                if (string.IsNullOrEmpty(responseMessage))
-                {
-                    //it should be html at that point
-                    //remove tags from html
-                    responseMessage = System.Text.RegularExpressions.Regex.Replace((await response.Content.ReadAsStringAsync()).Replace('\r', ' ').Replace('\n', ' '), "<.*?>", string.Empty);
-                }
-                throw new ApiException(
-                  (int)response.StatusCode,
-                  $"Error {(int)response.StatusCode} calling {methodName}: {response.ReasonPhrase} \r\n {responseMessage}");
+                return;
             }
+
+            var responseMessage = await GetErrorMessageFromErrorAsync(
+                response);
+
+            if (string.IsNullOrEmpty(responseMessage))
+            {
+                //it should be html at that point
+                //remove tags from html
+                responseMessage = System.Text.RegularExpressions.Regex.Replace((await response.Content.ReadAsStringAsync()).Replace('\r', ' ').Replace('\n', ' '), "<.*?>", string.Empty);
+            }
+
+            throw new ApiException(
+                (int)response.StatusCode,
+                $"Error {(int)response.StatusCode} calling {methodName}: {response.ReasonPhrase} \r\n {responseMessage}");
         }
 
         private static async Task<string?> GetErrorMessageFromErrorAsync(HttpResponseMessage response)
@@ -734,7 +795,7 @@ namespace Acumatica.RESTClient.ContractBasedApi
             try
             {
                 ErrorMessage? error = await DeserializeAsync<ErrorMessage>(response);
-                if (error == null || (String.IsNullOrEmpty(error.message) && String.IsNullOrEmpty(error.exceptionMessage)))
+                if (error == null || (string.IsNullOrEmpty(error.message) && string.IsNullOrEmpty(error.exceptionMessage)))
                 {
                 }
                 else

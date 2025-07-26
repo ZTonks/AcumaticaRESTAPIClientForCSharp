@@ -62,6 +62,7 @@ namespace Acumatica.RESTClient.Client
         public ApiClient(
             string basePath,
             IHttpClientHandler httpClient,
+            string? customEndpoint,
             Action<HttpRequestMessage>? requestInterceptor = null,
             Action<HttpResponseMessage>? responseInterceptor = null)
         {
@@ -71,6 +72,8 @@ namespace Acumatica.RESTClient.Client
 
             RequestInterceptor = requestInterceptor;
             ResponseInterceptor = responseInterceptor;
+
+            CustomEndpoint = customEndpoint;
 
             HttpClient = httpClient;
         }
@@ -85,6 +88,7 @@ namespace Acumatica.RESTClient.Client
         /// </summary>
         public Action<HttpResponseMessage>? ResponseInterceptor { get; set; }
 
+        public string? CustomEndpoint { get; set; }
 
         /// <summary>
         /// Gets or sets the HttpClient.
@@ -179,8 +183,7 @@ namespace Acumatica.RESTClient.Client
             object? postBody,
             Dictionary<string, string>? headerParams,
             string acceptType,
-            string contentType,
-            bool isAuth = false)
+            string contentType)
         {
             var url = new UriBuilder(BasePath + resourcePath);
 
@@ -189,7 +192,7 @@ namespace Acumatica.RESTClient.Client
                 url.Query += string.Join("&", queryParams.Select(queryParamter => $"{queryParamter.Key}={HttpUtility.UrlEncode(queryParamter.Value, Encoding.UTF8)}"));
             }
 
-            Console.WriteLine($"url: {url.ToString()}");
+            Console.WriteLine($"url: {url}");
 
             var request = new HttpRequestMessage(method, url.ToString());
 
@@ -227,6 +230,7 @@ namespace Acumatica.RESTClient.Client
                 }
                 else
                 {
+                    Console.WriteLine(Serialize(postBody));
                     request.Content = new StringContent(
                         Serialize(postBody),
                         Encoding.UTF8,
