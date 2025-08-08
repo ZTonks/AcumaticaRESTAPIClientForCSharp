@@ -470,16 +470,18 @@ namespace Acumatica.RESTClient.ContractBasedApi
             string? custom = null,
             int? skip = null,
             int? top = null,
-            Dictionary<string, string>? customHeaders = null)
+            Dictionary<string, string>? customHeaders = null,
+            HttpMethod? httpMethod = null,
+            object? postBody = null)
                 where EntityType : ITopLevelEntity, new()
         {
             endpointPath ??= $"{GetEndpointPath<EntityType>()}/{GetEntityName(typeof(EntityType))}";
 
             HttpResponseMessage response = await client.CallApiAsync(
               endpointPath,
-              HttpMethod.Get,
+              httpMethod ?? HttpMethod.Get,
               ComposeQueryParams(select, filter, expand, custom, skip, top),
-              null,
+              postBody,
               HeaderContentType.Json,
               HeaderContentType.Json,
               customHeaders);
