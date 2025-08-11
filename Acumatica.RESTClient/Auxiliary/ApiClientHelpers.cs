@@ -56,8 +56,6 @@ namespace Acumatica.RESTClient.Auxiliary
                 ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor
             };
 
-            Console.WriteLine($"debug resp: {await response.Content.ReadAsStringAsync()}");
-
             return (T?)JsonConvert.DeserializeObject(await response.Content.ReadAsStringAsync(), typeof(T), serializerSettings);
         }
 

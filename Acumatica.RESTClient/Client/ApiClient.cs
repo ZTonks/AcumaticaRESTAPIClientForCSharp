@@ -192,8 +192,6 @@ namespace Acumatica.RESTClient.Client
                 url.Query += string.Join("&", queryParams.Select(queryParamter => $"{queryParamter.Key}={HttpUtility.UrlEncode(queryParamter.Value, Encoding.UTF8)}"));
             }
 
-            Console.WriteLine($"url: {url}");
-
             var request = new HttpRequestMessage(method, url.ToString());
 
             if (headerParams != null)
@@ -230,7 +228,6 @@ namespace Acumatica.RESTClient.Client
                 }
                 else
                 {
-                    Console.WriteLine(Serialize(postBody));
                     request.Content = new StringContent(
                         Serialize(postBody),
                         Encoding.UTF8,
