@@ -49,7 +49,10 @@ namespace Acumatica.RESTClient.AuthApi
                HeaderContentType.WwwForm,
                useToken: false);
 
-            response.EnsureSuccessStatusCode();
+            await VerifyResponseAsync(
+                client,
+                response,
+                nameof(RefreshAccessTokenAsync));
 
             client.Token = await DeserializeAsync<Token>(response);
         }
